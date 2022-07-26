@@ -15,7 +15,7 @@ const handleLogOut = async () => {
 }
 </script>
 <template>
-    <div>
+    <div v-if="token">
         <header>
             <nav className='flex justify-between items-center p-2 bg-white border-b border-gray-200'>
                 <div>
@@ -23,8 +23,7 @@ const handleLogOut = async () => {
                 </div>
 
                 <div>
-                <button v-if="token" @click="handleLogOut()" type="button" class="button">Log Out</button>
-                <button v-else type="button" class="button"><router-link to="/">Login</router-link></button>
+                <button @click="handleLogOut()" type="button" class="button">Log Out</button>
                 </div>
             </nav>
         </header>

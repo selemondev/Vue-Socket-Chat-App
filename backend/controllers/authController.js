@@ -59,8 +59,45 @@ const loginUser = asyncHandler( async ( req, res ) => {
         throw new Error( "Invalid user credentials")
     }
 });
+
+const getAllUsers = asyncHandler( async ( req, res ) => {
+    try {
+        const users = await User.find({ _id: { $ne: req.params.id}}).select([
+            "email",
+            "username",
+            "avatar",
+            "_id"
+        ]);
+        res.status(200).json(users)
+    } catch(error) {
+        res.status(400)
+        throw new Error(error.message)
+    }
+})
 const getCredentials = asyncHandler( async ( req, res ) => {
     res.status(200).json(req.user)
+});
+
+const createAvatar = asyncHandler( async ( req, res ) => {
+    try {
+    const data = await User.findByIdAndUpdate(req.params.id, req.body, { new: true});
+    return res.status(200).json({
+        image: data.avatar
+    })
+    } catch(err) {
+        res.status(400)
+        throw new Error(err.message)
+    }
+});
+
+const logOut = asyncHandler( async ( req, res ) => {
+    if( !req.params.id ) {
+        res.status(401);
+        throw new Error("Id is required")
+    } else {
+        onlineUsers.delete(req.params.id);
+        res.status(200).json({ id: req.params.id})
+    }
 })
 function generateToken(id) {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -71,5 +108,8 @@ function generateToken(id) {
 module.exports = {
     registerUser,
     loginUser,
-    getCredentials
+    getCredentials,
+    getAllUsers,
+    createAvatar,
+    logOut
 }

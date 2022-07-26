@@ -26,6 +26,9 @@
         @apply font-bold text-red-500 mt-2
     }
 
+    .grid-center {
+      @apply grid place-items-center
+    }
     .button {
       @apply focus:outline-none text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 font-bold rounded-lg text-sm py-2.5 px-5 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800
     }

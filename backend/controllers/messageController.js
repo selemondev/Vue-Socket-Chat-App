@@ -32,7 +32,7 @@ const addMessage = asyncHandler( async ( req, res ) => {
         });
 
         if ( data ) {
-            res.status(201).json("Message sent")
+            res.status(201).json(data)
         }
     } catch(error) {
         res.status(400);
