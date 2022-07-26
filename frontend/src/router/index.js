@@ -22,6 +22,14 @@ const router = createRouter({
       }
     },
     {
+      path: '/profile',
+      name: 'profile',
+      component: () => import("../views/Profile.vue"),
+      meta: {
+        auth: true
+      }
+    },
+    {
       path: '/chat',
       name: 'chat',
       component: Chat,
