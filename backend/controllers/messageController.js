@@ -1,46 +1,34 @@
-const Message = require("../models/messageModel");
+const Message = require("../models/MessageModel")
 const asyncHandler = require("express-async-handler");
-const getMessages = asyncHandler( async (req, res ) => {
-    try {
-    const { from, to } = req.body;
-    const messages = await Message.find({
-        users: {
-            $all: [from, to]
-        }
-    }).sort({ updatedAt: 1});
-
-    const projectedMessages = messages.map((msg) => {
-        return {
-            fromSelf: msg.sender.toString() === from,
-            message: msg.message.text
-        }
+const addMessage = asyncHandler( async ( req, res ) => {
+    const { chatId, senderId , text } = req.body;
+    const message = new Message({
+        chatId,
+        senderId,
+        text
     });
-    res.status(200).json(projectedMessages)
-    } catch(error) {
-        res.status(400)
-        throw new Error(error.message)
+
+    try {
+        const result = await message.save();
+        res.status(200).json(result);
+    } catch(err) {
+        res.status(400);
+        throw new Error(err.message);
     }
 });
 
-const addMessage = asyncHandler( async ( req, res ) => {
+const getMessages = asyncHandler( async ( req, res ) => {
+    const { chatId } = req.params;
     try {
-        const { from, to, message } = req.body;
-        const data = await Message.create({
-            message: { text: message },
-            users: [ from, to],
-            sender: from
-        });
-
-        if ( data ) {
-            res.status(201).json(data)
-        }
-    } catch(error) {
+        const result = await Message.find({ chatId });
+        res.status(200).json(result);
+    } catch(err) {
         res.status(400);
-        throw new Error(error.message)
+        throw new Error(err.message);
     }
 });
 
 module.exports = {
-    getMessages,
-    addMessage
+    addMessage,
+    getMessages
 }

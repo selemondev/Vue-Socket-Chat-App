@@ -4,24 +4,44 @@ import { watchEffect, ref } from "vue";
 import axios from "axios";
 import Sidebar from "../components/Sidebar.vue";
 import ChatContainer from "../components/ChatContainer.vue";
+import { io } from "socket.io-client";
 const authStore = useAuthStore();
 const currentUser = ref("");
 const socket = ref(null);
-const host = "http://localhost:5000";
 const contacts = ref([]);
+const onlineUsers = ref([])
+const chats = ref([]);
+const chatId = ref(null)
 const userId = ref(null);
 const userUsername = ref("");
 const userAvatar = ref("");
 watchEffect( async () => {
   currentUser.value = authStore.user?.data?._id;
+  console.log(currentUser.value);
+  console.log(authStore.user?.data?.username)
 });
 
 watchEffect( async () => {
-    if(currentUser.value) {
-    const response = await axios.get(`http://localhost:5000/api/auth/allUsers/${currentUser.value}`);
-    contacts.value = response.data;
-    }
+  const response = await axios.get(`http://localhost:5000/api/chat/${currentUser.value}`);
+  chats.value = response.data;
+  chatId.value = chats.value[0]._id;
+  console.log("ChatId: ", chatId.value);
+  console.log(chats.value)
 });
+
+watchEffect( async () => {
+  const response = await axios.get(`http://localhost:5000/api/auth/allUsers/${currentUser.value}`);
+  contacts.value = response.data;
+  console.log(contacts.value)
+})
+
+watchEffect(() => {
+  socket.current = io("http://localhost:8800");
+  socket.current.emit("new-user-add", currentUser.value);
+  socket.current.on('get-users', (users) => {
+    onlineUsers.value = users
+  });
+})
 
 const Chat = (id, avatar, username) => {
   userId.value = id;
@@ -65,6 +85,7 @@ const Chat = (id, avatar, username) => {
         :id="userId"
         :avatar="userAvatar"
         :username="userUsername"
+        :chatId="chatId"
         :socket="socket"
         />
         </div>
