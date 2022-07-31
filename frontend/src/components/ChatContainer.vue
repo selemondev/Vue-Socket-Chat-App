@@ -3,7 +3,6 @@ import axios from "axios";
 import { watchEffect, ref } from "vue";
 import { useAuthStore } from "../stores/authStore";
 import { io } from "socket.io-client";
-const messages = ref([]);
 const authStore = useAuthStore();
 const text = ref("")
 const socket = ref(null);
@@ -11,52 +10,52 @@ const props = defineProps({
     id: String,
     username: String,
     avatar: String,
+    chatId: String
 });
 const currentUser = ref("");
-const arrivalMessage = ref(null);
-const msgs = ref([])
-const host = "http://localhost:5000";
-const getMessages = "http://localhost:5000/api/message/get";
-const sendMessage = "http://localhost:5000/api/message/create";
+const receivedMessage = ref([])
+const host = "http://localhost:8800";
+const addMessage = "http://localhost:5000/api/messages/addMessage";
+const messages = ref([]);
 watchEffect( async () => {
   currentUser.value = authStore.user?.data?._id;
   console.log(authStore.user?.data?.username);
     socket.current = io(host);
-    console.log(socket.current)
-    socket.current.emit("add-user", currentUser);
 });
 watchEffect( async () => {
-    const response = await axios.post(getMessages, {
-        from: currentUser.value,
-        to: props.id
-    });
-    messages.value = response.data;
-    console.log("Messages:",messages.value)
-});
+    const getMessages = `http://localhost:5000/api/messages/getMessages/${props.chatId}`;
+    const fetchMessages = await axios.get(getMessages);
+    messages.value = fetchMessages.data;
+})
 
 const handleSubmit = async () => {
-    socket.current.on("send-msg", {
-        from: currentUser.value,
-        to: props.id,
-        text
+    const message = {
+        senderId: currentUser.value,
+        text: text.value,
+        chatId: props.chatId
+    };
+    const response = await axios.post(addMessage, {
+        ...message
     });
-     await axios.post(sendMessage, {
-      from: props.id,
-      to: currentUser.value,
-      message: text.value,
-    });
-    messages.value.push({fromSelf: true, message: text.value});
-    console.log("Messages:", messages.value)
+    // const responseData = response.data;
+    // messages.value.push(responseData)
+    const receiverId = props.id;
+    const sendEmit = {
+        message,
+        receiverId
+    };
+    socket.current = io(host);
+    socket.current.emit("send-message", sendEmit);
 };
 
 watchEffect(() => {
-    if( socket.current ) {
-        socket.current.on("msg-received", (text) => {
-            console.log(({fromSelf: false, message: text.value}))
-        })
-    };
-    console.log("Arrival: ", arrivalMessage.value)
-});
+    socket.current = io(host);
+    socket.current.on("receive-message", (data) => {
+    receivedMessage.value = data.message;
+    });
+    messages.value.push(receivedMessage.value);
+    console.log("AllMessages: ", messages.value)
+})
 </script>
 <template>
     <div>
@@ -69,8 +68,8 @@ watchEffect(() => {
     </div>
     </div>
 
-    <div v-for="message in messages">
-    <p>{{message.message}}</p>
+    <div v-for="message in messages" :key="message._id">
+    <p class="text-xl">{{message.text}}</p>
     </div>
 
      <div class="w-80">
