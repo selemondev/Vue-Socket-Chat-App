@@ -22,14 +22,6 @@ watchEffect( async () => {
 });
 
 watchEffect( async () => {
-  const response = await axios.get(`http://localhost:5000/api/chat/${currentUser.value}`);
-  chats.value = response.data;
-  chatId.value = chats.value[0]._id;
-  console.log("ChatId: ", chatId.value);
-  console.log(chats.value)
-});
-
-watchEffect( async () => {
   const response = await axios.get(`http://localhost:5000/api/auth/allUsers/${currentUser.value}`);
   contacts.value = response.data;
   console.log(contacts.value)
@@ -43,7 +35,7 @@ watchEffect(() => {
   });
 })
 
-const Chat = (id, avatar, username) => {
+const Chat = async (id, avatar, username) => {
   userId.value = id;
   userUsername.value = username;
   userAvatar.value = avatar;
