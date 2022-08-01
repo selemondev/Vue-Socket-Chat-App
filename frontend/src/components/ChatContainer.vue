@@ -13,9 +13,10 @@ const props = defineProps({
     chatId: String
 });
 const currentUser = ref("");
-const receivedMessage = ref([])
+const receivedMessage = ref([]);
+const responseMessage = ref([]);
 const host = "http://localhost:8800";
-const addMessage = "http://localhost:5000/api/messages/addMessage";
+const createMessage = "http://localhost:5000/api/messages/addMessage";
 const messages = ref([]);
 watchEffect( async () => {
   currentUser.value = authStore.user?.data?._id;
@@ -23,22 +24,26 @@ watchEffect( async () => {
     socket.current = io(host);
 });
 watchEffect( async () => {
-    const getMessages = `http://localhost:5000/api/messages/getMessages/${props.chatId}`;
-    const fetchMessages = await axios.get(getMessages);
+    const getMessages = "http://localhost:5000/api/messages/getMessages";
+    const fetchMessages = await axios.post(getMessages, {
+        from: currentUser.value,
+        to: props.id
+    });
     messages.value = fetchMessages.data;
 })
 
 const handleSubmit = async () => {
     const message = {
-        senderId: currentUser.value,
-        text: text.value,
-        chatId: props.chatId
+        from: currentUser.value,
+        to: props.id,
+        message: text.value,
     };
-    const response = await axios.post(addMessage, {
-        ...message
+    await axios.post(createMessage, {
+        from: currentUser.value,
+        to: props.id,
+        message: text.value,
     });
-    // const responseData = response.data;
-    // messages.value.push(responseData)
+    messages.value.push({ fromSelf: true, message: text.value });
     const receiverId = props.id;
     const sendEmit = {
         message,
@@ -51,10 +56,12 @@ const handleSubmit = async () => {
 watchEffect(() => {
     socket.current = io(host);
     socket.current.on("receive-message", (data) => {
-    receivedMessage.value = data.message;
+    messages.value.push({ fromSelf: false, message: data.message.message})
     });
-    messages.value.push(receivedMessage.value);
-    console.log("AllMessages: ", messages.value)
+});
+
+watchEffect(() => {
+    console.log("Realtime: ", messages.value)
 })
 </script>
 <template>
@@ -67,11 +74,13 @@ watchEffect(() => {
               </div>
     </div>
     </div>
-
     <div v-for="message in messages" :key="message._id">
-    <p class="text-xl">{{message.text}}</p>
+    <div :class="[`message_wrapper ${message.fromSelf ? 'text-right' : 'text-left'}` ]">
+    <div :class="[`message ${message.fromSelf ? ' bg-green-500 rounded-md text-white' : 'bg-white rounded-md'}`]">
+        <p class="text-xl">{{message.message}}</p>
     </div>
-
+    </div>
+    </div>
      <div class="w-80">
         <form class="absolute bottom-0 flex items-center xl:ml-2 md:ml-10 sm:ml-6 ml-2 md:bg-[#eee]" @submit.prevent="handleSubmit">
        <div class="flex justify-center items-center md:-ml-15 ml-4">
