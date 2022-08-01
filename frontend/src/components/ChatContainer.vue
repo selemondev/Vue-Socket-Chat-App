@@ -13,16 +13,10 @@ const props = defineProps({
     chatId: String
 });
 const currentUser = ref("");
-const receivedMessage = ref([]);
-const responseMessage = ref([]);
 const host = "http://localhost:8800";
 const createMessage = "http://localhost:5000/api/messages/addMessage";
 const messages = ref([]);
-watchEffect( async () => {
-  currentUser.value = authStore.user?.data?._id;
-  console.log(authStore.user?.data?.username);
-    socket.current = io(host);
-});
+
 watchEffect( async () => {
     const getMessages = "http://localhost:5000/api/messages/getMessages";
     const fetchMessages = await axios.post(getMessages, {
@@ -31,6 +25,10 @@ watchEffect( async () => {
     });
     messages.value = fetchMessages.data;
 })
+watchEffect( async () => {
+  currentUser.value = authStore.user?.data?._id;
+  socket.current = io(host);
+});
 
 const handleSubmit = async () => {
     const message = {
@@ -43,6 +41,7 @@ const handleSubmit = async () => {
         to: props.id,
         message: text.value,
     });
+
     messages.value.push({ fromSelf: true, message: text.value });
     const receiverId = props.id;
     const sendEmit = {
@@ -59,10 +58,6 @@ watchEffect(() => {
     messages.value.push({ fromSelf: false, message: data.message.message})
     });
 });
-
-watchEffect(() => {
-    console.log("Realtime: ", messages.value)
-})
 </script>
 <template>
     <div>
